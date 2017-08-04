@@ -1,0 +1,86 @@
+version: '2'
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: storm_mysql
+    restart: always
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=vich2Phah0ciek2ohyaiphushu5aiShu
+      - MYSQL_DATABASE=storm
+      - MYSQL_USER=storm
+      - MYSQL_PASSWORD=uRahLaib9ooK5or1
+    ports:
+      - 3306:3306
+
+  influxdb:
+    image: tutum/influxdb
+    container_name: storm_influxdb
+    restart: always
+    volumes:
+      - ./volumes/influxdb:/data
+    environment:
+      - PRE_CREATE_DB=storm
+
+  grafana:
+    image: grafana/grafana
+    container_name: storm_grafana
+    restart: always
+    ports:
+      - 3000:3000/tcp
+    volumes:
+        - ./volumes/grafana:/var/lib/grafana
+    environment:
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_NAME=storm
+      - INFLUXDB_USER=root
+      - INFLUXDB_PASS=root
+    links:
+      - influxdb
+
+  zookeeper:
+    image: zookeeper
+    container_name: zookeeper
+    restart: always
+
+  nimbus:
+    image: storm:1.0
+    container_name: nimbus
+    command: storm nimbus
+    restart: always
+    volumes:
+      - ./volumes/storm-nimbus/logs:/logs 
+      - ./volumes/storm-nimbus/data:/data 
+    links:
+      - zookeeper
+
+  supervisor:
+    image: storm:1.0
+    container_name: supervisor
+    command: storm supervisor
+    restart: always
+    volumes:
+      - ./volumes/storm-supervisor/logs:/logs 
+      - ./volumes/storm-supervisor/data:/data 
+    links:
+      - zookeeper
+      - nimbus
+      - mysql
+      - influxdb
+
+  storm_ui:
+    image: storm:1.0
+    container_name: storm_ui
+    command: storm ui
+    restart: always
+    volumes:
+      - ./volumes/storm-ui/logs:/logs 
+      - ./volumes/storm-ui/data:/data 
+    ports:
+      - 8080:8080
+    links:
+      - zookeeper
+      - nimbus
+
